@@ -36,4 +36,6 @@ app.post('/api/generate-video', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Servidor activo`));
+app.listen(PORT, "0.0.0.0", () => console.log(`Servidor activo en red global`));
+
+
