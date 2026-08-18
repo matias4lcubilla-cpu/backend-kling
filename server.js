@@ -1,13 +1,16 @@
 import express from 'express';
 import cors from 'cors';
-import { fal } from '@fal-ai/client'; // Importación oficial corregida para entornos Node.js
+import fal from '@fal-ai/serverless-client'; // Volvemos a la librería que sí tenés instalada
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Habilitar CORS y soporte para imágenes grandes en base64
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+fal.config({
+  credentials: process.env.FAL_KEY,
+});
 
 app.post('/api/generate-video', async (req, res) => {
   try {
@@ -19,7 +22,7 @@ app.post('/api/generate-video', async (req, res) => {
 
     console.log("Iniciando petición al modelo Kling v1.5 en FAL.AI...");
 
-    // Ejecución utilizando el cliente estándar y estructurado de FAL
+    // Estructura nativa compatible con tu paquete instalado
     const result = await fal.run("fal-ai/kling/v1.5/image-to-video", {
       input: {
         image_url: "https://githubusercontent.com",
@@ -29,24 +32,23 @@ app.post('/api/generate-video', async (req, res) => {
       }
     });
 
-    console.log("Respuesta cruda de FAL.AI recibida:", JSON.stringify(result));
+    console.log("Respuesta cruda de FAL.AI recibida.");
 
-    // Captura dinámica de cualquier variante de respuesta de video de FAL
-    const finalVideoUrl = result?.video?.url || result?.video_url || (result?.outputs && result?.outputs[0]?.video_url);
+    // Mapeo dinámico para extraer el link del video generado
+    const finalVideoUrl = result?.video?.url || result?.video_url || (result?.outputs && result?.outputs?.video_url);
 
     if (!finalVideoUrl) {
-      throw new Error("FAL.AI procesó la solicitud pero no retornó un parámetro de video válido.");
+      throw new Error("FAL.AI no devolvió una URL de video válida.");
     }
 
     res.json({ videoUrl: finalVideoUrl });
 
   } catch (error) {
-    console.error("Error detectado en el flujo del backend:", error.message);
+    console.error("Error en el flujo del backend:", error.message);
     res.status(500).json({ error: `Error en Kling/FAL.AI: ${error.message}` });
   }
 });
 
-// Escucha en interfaz de red universal requerida por Render
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Servidor activo en red global en puerto ${PORT}`);
 });
