@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { fal } from "@fal-ai/serverless-client";
+import fal from "@fal-ai/serverless-client"; // <-- Importación corregida sin llaves
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,9 +19,9 @@ app.post('/api/generate-video', async (req, res) => {
 
     console.log("Enviando a FAL.AI con Kling...");
 
+    // Llamada directa usando fal.subscribe
     const result = await fal.subscribe("fal-ai/kling/v1.5/image-to-video", {
       input: {
-        // Ponemos una imagen de ejemplo por ahora, después la podés cambiar por tu URL fija
         image_url: "https://githubusercontent.com", 
         image_tail_url: userImageBase64, 
         prompt: "A smooth cinematic transition to the user's face, high quality, 4k",
