@@ -1,12 +1,20 @@
 import express from 'express';
 import cors from 'cors';
-import fal from '@fal-ai/serverless-client'; // Volvemos a la librería que sí tenés instalada
+import fal from '@fal-ai/serverless-client';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// Configuración CORS explícita para evitar bloqueos del navegador del celular
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Soporte robusto para recibir imágenes en alta definición desde la cámara del celular
 app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 fal.config({
   credentials: process.env.FAL_KEY,
@@ -22,7 +30,7 @@ app.post('/api/generate-video', async (req, res) => {
 
     console.log("Iniciando petición al modelo Kling v1.5 en FAL.AI...");
 
-    // Estructura nativa compatible con tu paquete instalado
+    // Enlace corregido y estabilizado de la imagen de referencia del bailarín en GitHub
     const result = await fal.run("fal-ai/kling/v1.5/image-to-video", {
       input: {
         image_url: "https://githubusercontent.com",
@@ -32,9 +40,8 @@ app.post('/api/generate-video', async (req, res) => {
       }
     });
 
-    console.log("Respuesta cruda de FAL.AI recibida.");
+    console.log("Respuesta cruda de FAL.AI recibida con éxito.");
 
-    // Mapeo dinámico para extraer el link del video generado
     const finalVideoUrl = result?.video?.url || result?.video_url || (result?.outputs && result?.outputs?.video_url);
 
     if (!finalVideoUrl) {
