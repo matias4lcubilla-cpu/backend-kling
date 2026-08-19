@@ -1,22 +1,26 @@
 import express from 'express';
 import cors from 'cors';
 import fal from '@fal-ai/serverless-client';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Servir la carpeta public de forma estática (El Proxy unificado)
+app.use(express.static(path.join(__dirname, 'public')));
 
 fal.config({
   credentials: process.env.FAL_KEY,
 });
 
+// Ruta de procesamiento interno de la IA
 app.post('/api/generate-video', async (req, res) => {
   try {
     const { userImageBase64 } = req.body;
@@ -25,9 +29,8 @@ app.post('/api/generate-video', async (req, res) => {
       return res.status(400).json({ error: 'Falta la foto del usuario.' });
     }
 
-    console.log("Generando video de transformación a Vedette con Kling...");
+    console.log("Iniciando petición al modelo Kling v1.5 en FAL.AI...");
 
-    // Llamada directa usando únicamente la foto del usuario como inicio (image_url)
     const result = await fal.subscribe("fal-ai/kling/v1.5/image-to-video", {
       input: {
         image_url: userImageBase64,
@@ -36,8 +39,6 @@ app.post('/api/generate-video', async (req, res) => {
       },
       logs: true
     });
-
-    console.log("Video de vedette generado con éxito.");
 
     const finalVideoUrl = result?.video?.url || result?.video_url || (result?.outputs && result?.outputs?.video_url);
 
@@ -53,6 +54,11 @@ app.post('/api/generate-video', async (req, res) => {
   }
 });
 
+// Ruta comodín para que siempre sirva el index.html en la raíz
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Servidor activo en red global en puerto ${PORT}`);
+  console.log(`Servidor unificado corriendo en puerto ${PORT}`);
 });
